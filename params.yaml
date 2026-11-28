@@ -1,0 +1,41 @@
+# MP251 settings. Read with yaml.safe_load; nothing is hard-coded in src/.
+
+paths:
+  train: data/raw/train.csv
+  later: data/raw/later.csv
+  holdout: data/raw/holdout_features.csv
+  model: models/model.joblib
+  mlflow_db: mlflow.db
+
+target: energy_kwh
+
+features:
+  numeric: [panel_area_m2, sunshine_hours, temp_c, dust_days, panel_age_yr, cloud_cover_pct]
+  categorical: [roof_type, area]
+
+cleaning:
+  # train.csv problems found by src/mp251 (see data_issues notes in README):
+  unit_fix_area: Old City          # panel_area_m2 recorded in cm2 there
+  unit_fix_factor: 10000           # divide by this
+  sentinel_value: 999              # typed instead of a blank in cloud_cover_pct
+  target_typo_threshold: 100       # gap in train.csv: 54.56 -> 183.1
+  target_typo_factor: 10          # those targets are 10x too big
+
+training:
+  experiment: mp251-rooftop-solar
+  registered_model: mp251-energy
+  test_size: 0.2
+  random_state: 42
+  candidates:
+    - name: rf_default
+      kind: rf
+      n_estimators: 300
+    - name: rf_shallow
+      kind: rf
+      n_estimators: 300
+      max_depth: 8
+      min_samples_leaf: 5
+    - name: hgb
+      kind: hgb
+      max_iter: 300
+      learning_rate: 0.08
